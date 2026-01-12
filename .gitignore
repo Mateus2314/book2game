@@ -1,0 +1,132 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables & Security
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.key
+*.pem
+*.cert
+*.crt
+secrets.json
+config/secrets.yaml
+*secret*
+*credential*
+.aws/
+.gcp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+*backup.sql
+*dump.sql
+
+# Redis
+redis_data/
+dump.rdb
+appendonly.aof
+
+# Docker
+docker-compose.override.yml
+docker-compose.prod.yml
+docker-compose.*.local.yml
+.dockerignore.local
+
+# Node/Frontend
+node_modules/
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+.next/
+out/
+dist/
+build/
+
+# Expo
+.expo/
+.expo-shared/
+web-build/
+
+# Logs
+logs/
+*.log
+*.log.*
+log_*.txt
+
+# Testing & Coverage (keep reports local only)
+.coverage
+coverage.xml
+htmlcov/
+test-results/
+coverage-reports/
+junit.xml
+
+# OS
+Thumbs.db
+
+# IDE configs with sensitive data
+.vscode/settings.json
+.idea/workspace.xml
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig

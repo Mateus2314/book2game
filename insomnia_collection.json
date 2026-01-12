@@ -1,0 +1,566 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-01-07T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_book2game",
+      "_type": "workspace",
+      "name": "Book2Game API",
+      "description": "API REST para recomendação de jogos baseada em livros",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8000/api/v1",
+        "access_token": ""
+      },
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "env_dev",
+      "_type": "environment",
+      "name": "Development_new",
+      "data": {
+        "base_url": "http://localhost:8000/api/v1",
+        "access_token": "",
+        "test_email": "teste@example.com",
+        "test_password": "senha123"
+      },
+      "parentId": "env_base"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "name": "🔐 Authentication",
+      "description": "Endpoints de autenticação e gerenciamento de tokens",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_register",
+      "_type": "request",
+      "name": "Register User",
+      "description": "Criar novo usuário (limite: 5 requests/minuto)",
+      "url": "{{ _.base_url }}/auth/register",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.test_email }}\",\n  \"password\": \"{{ _.test_password }}\",\n  \"full_name\": \"Usuário Teste\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "name": "Login",
+      "description": "Login com email/senha (retorna access_token e refresh_token)",
+      "url": "{{ _.base_url }}/auth/login?email={{ _.test_email }}&password={{ _.test_password }}",
+      "method": "POST",
+      "body": {},
+      "headers": [],
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "req_refresh",
+      "_type": "request",
+      "name": "Refresh Token",
+      "description": "Renovar access_token usando refresh_token",
+      "url": "{{ _.base_url }}/auth/refresh-token",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"seu_refresh_token_aqui\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "fld_books",
+      "_type": "request_group",
+      "name": "📚 Books",
+      "description": "Busca e gerenciamento de livros via Google Books API",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_search_books",
+      "_type": "request",
+      "name": "Search Books",
+      "description": "Buscar livros (com cache de 24h)",
+      "url": "{{ _.base_url }}/books/search?query=Harry Potter&max_results=10&start_index=0",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_books"
+    },
+    {
+      "_id": "req_book_details",
+      "_type": "request",
+      "name": "Get Book Details",
+      "description": "Detalhes de um livro específico por Google Books ID",
+      "url": "{{ _.base_url }}/books/zyTCAlFPjgYC",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_books"
+    },
+    {
+      "_id": "req_create_book_from_google",
+      "_type": "request",
+      "name": "Create Book from Google (Auto)",
+      "description": "Criar livro automaticamente buscando dados da API do Google Books",
+      "url": "{{ _.base_url }}/books/from-google/wrOQLV6xB-wC",
+      "method": "POST",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_books"
+    },
+    {
+      "_id": "req_create_book",
+      "_type": "request",
+      "name": "Create Book (Manual)",
+      "description": "Criar livro manualmente fornecendo todos os dados",
+      "url": "{{ _.base_url }}/books/",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"google_books_id\": \"zyTCAlFPjgYC\",\n  \"title\": \"Harry Potter and the Sorcerer's Stone\",\n  \"authors\": \"J.K. Rowling\",\n  \"description\": \"The first book in the Harry Potter series\",\n  \"categories\": \"Fantasy, Young Adult\",\n  \"language\": \"en\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_books"
+    },
+    {
+      "_id": "fld_games",
+      "_type": "request_group",
+      "name": "🎮 Games",
+      "description": "Busca de jogos na base local (jogos gerados por IA via recomendações)",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_search_games",
+      "_type": "request",
+      "name": "Search Games",
+      "description": "Buscar jogos por nome na base local (com paginação)",
+      "url": "{{ _.base_url }}/games/search?query=legend&page_size=10&page=1",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_games"
+    },
+    {
+      "_id": "req_game_details",
+      "_type": "request",
+      "name": "Get Game Details",
+      "description": "Detalhes de um jogo específico por ID interno",
+      "url": "{{ _.base_url }}/games/1",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_games"
+    },
+    {
+      "_id": "req_search_games_tags",
+      "_type": "request",
+      "name": "Search by Tags",
+      "description": "Buscar jogos por tags (máx 10, separadas por vírgula)",
+      "url": "{{ _.base_url }}/games/tags/fantasy,magic,adventure?page_size=10",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_games"
+    },
+    {
+      "_id": "req_create_game",
+      "_type": "request",
+      "name": "Create Game (Internal)",
+      "description": "Criar jogo no banco local (usado internamente, jogos AI-generated)",
+      "url": "{{ _.base_url }}/games/",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"rawg_id\": 100123,\n  \"name\": \"Legends of Ancient Realm\",\n  \"slug\": \"legends-of-ancient-realm\",\n  \"description\": \"AI-generated fantasy RPG\",\n  \"rating\": 4.35,\n  \"genres\": \"RPG,Adventure\",\n  \"tags\": \"fantasy,magic,medieval\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_games"
+    },
+    {
+      "_id": "fld_recommendations",
+      "_type": "request_group",
+      "name": "🤖 Recommendations (AI)",
+      "description": "Sistema de recomendação com IA (limite: 10 requests/hora)",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_generate_recommendation",
+      "_type": "request",
+      "name": "Generate Recommendation ⭐",
+      "description": "ENDPOINT PRINCIPAL - Gera recomendação de jogos usando IA (Hugging Face)\nLimite: 10 requests/hora\nTimeout: 30 segundos\n\n⚠️ IMPORTANTE: book_id deve ser o ID INTERNO (número), não o Google Books ID.\nPrimeiro crie o livro com POST /books/from-google/{google_books_id}, depois use o ID retornado aqui.",
+      "url": "{{ _.base_url }}/recommendations/",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"book_id\": 5\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_recommendations"
+    },
+    {
+      "_id": "req_list_recommendations",
+      "_type": "request",
+      "name": "List My Recommendations",
+      "description": "Listar histórico de recomendações do usuário",
+      "url": "{{ _.base_url }}/recommendations/?skip=0&limit=10",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_recommendations"
+    },
+    {
+      "_id": "req_get_recommendation",
+      "_type": "request",
+      "name": "Get Recommendation by ID",
+      "description": "Detalhes de uma recomendação específica (com verificação de ownership)",
+      "url": "{{ _.base_url }}/recommendations/1",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_recommendations"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "name": "👤 Users",
+      "description": "Gerenciamento de perfil do usuário",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_get_profile",
+      "_type": "request",
+      "name": "Get My Profile",
+      "description": "Obter perfil do usuário autenticado",
+      "url": "{{ _.base_url }}/users/me",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_update_profile",
+      "_type": "request",
+      "name": "Update Profile",
+      "description": "Atualizar email, nome ou senha",
+      "url": "{{ _.base_url }}/users/me",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"full_name\": \"Novo Nome\",\n  \"email\": \"novoemail@example.com\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_user_recommendations",
+      "_type": "request",
+      "name": "Get My Recommendations (Shortcut)",
+      "description": "Atalho para /recommendations/ (mesmo resultado)",
+      "url": "{{ _.base_url }}/users/me/recommendations?skip=0&limit=10",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_get_library",
+      "_type": "request",
+      "name": "Get My Library",
+      "description": "Listar livros da minha biblioteca pessoal",
+      "url": "{{ _.base_url }}/users/me/books?skip=0&limit=50",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_add_book_from_google",
+      "_type": "request",
+      "name": "Add Book to Library (from Google)",
+      "description": "Adicionar livro à minha biblioteca automaticamente (busca Google Books API)",
+      "url": "{{ _.base_url }}/users/me/books/from-google/wrOQLV6xB-wC",
+      "method": "POST",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_add_book_by_id",
+      "_type": "request",
+      "name": "Add Book to Library (by ID)",
+      "description": "Adicionar livro existente à minha biblioteca por book_id",
+      "url": "{{ _.base_url }}/users/me/books/1",
+      "method": "POST",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_update_library_book",
+      "_type": "request",
+      "name": "Update Library Book",
+      "description": "Atualizar metadados do livro (favorito, status, rating, notas)",
+      "url": "{{ _.base_url }}/users/me/books/1",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_favorite\": true,\n  \"reading_status\": \"reading\",\n  \"personal_rating\": 5,\n  \"notes\": \"Livro incrível!\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_remove_from_library",
+      "_type": "request",
+      "name": "Remove Book from Library",
+      "description": "Remover livro da minha biblioteca",
+      "url": "{{ _.base_url }}/users/me/books/1",
+      "method": "DELETE",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_get_game_library",
+      "_type": "request",
+      "name": "Get My Game Library",
+      "description": "Obter minha biblioteca de jogos com filtros",
+      "url": "{{ _.base_url }}/users/me/games?skip=0&limit=50&favorite_only=false",
+      "method": "GET",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_add_game_by_id",
+      "_type": "request",
+      "name": "Add Game by ID",
+      "description": "Adicionar jogo existente à minha biblioteca",
+      "url": "{{ _.base_url }}/users/me/games/1",
+      "method": "POST",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_update_game_library",
+      "_type": "request",
+      "name": "Update Game in Library",
+      "description": "Atualizar metadata do jogo na minha biblioteca",
+      "url": "{{ _.base_url }}/users/me/games/1",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_favorite\": true,\n  \"play_status\": \"playing\",\n  \"personal_rating\": 5,\n  \"notes\": \"Jogo incrível! Jogando desde 2015.\",\n  \"hours_played\": 120\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_remove_game_from_library",
+      "_type": "request",
+      "name": "Remove Game from Library",
+      "description": "Remover jogo da minha biblioteca",
+      "url": "{{ _.base_url }}/users/me/games/1",
+      "method": "DELETE",
+      "body": {},
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "fld_health",
+      "_type": "request_group",
+      "name": "🏥 Health Check",
+      "description": "Endpoints de status da API",
+      "environment": {},
+      "parentId": "wrk_book2game"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "name": "Health Check",
+      "description": "Verificar status da API (sem autenticação)",
+      "url": "http://localhost:8000/health",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parentId": "fld_health"
+    },
+    {
+      "_id": "req_swagger",
+      "_type": "request",
+      "name": "Swagger UI",
+      "description": "Documentação interativa da API",
+      "url": "http://localhost:8000/docs",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parentId": "fld_health"
+    }
+  ]
+}

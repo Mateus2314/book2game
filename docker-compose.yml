@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  # Armazena dados persistentes: usuários, livros, jogos, recomendações
+  postgres:
+    image: postgres:15-alpine
+    container_name: book2game_postgres
+    environment:
+      POSTGRES_USER: book2game
+      POSTGRES_PASSWORD: book2game_dev
+      POSTGRES_DB: book2game_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U book2game"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - book2game_network
+
+  # Redis Cache
+  # Sistema de cache in-memory key-value para otimizar performance
+  # - TTL padrão: 24h para dados de APIs externas (Google Books, RAWG)
+  # - Comandos principais: GET (recuperar), SET (armazenar), EXPIRE (definir TTL)
+  # - Uso: cachear resultados de buscas, classificações IA, detalhes de jogos
+  # - Fallback: se Redis falhar, APIs são chamadas diretamente (graceful degradation)
+  redis:
+    image: redis:7-alpine
+    container_name: book2game_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - book2game_network
+
+  # Redis Commander
+  # Interface web para visualização e gerenciamento do cache Redis
+  # Acesse: http://localhost:8081
+  # Permite inspecionar keys, valores, TTLs e executar comandos manualmente
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: book2game_redis_commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - book2game_network
+
+  # FastAPI Backend
+  # API REST com hot-reload para desenvolvimento
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: book2game_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://book2game:book2game_dev@postgres:5432/book2game_db
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - book2game_network
+
+networks:
+  book2game_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

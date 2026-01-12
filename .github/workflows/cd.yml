@@ -1,0 +1,45 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-railway:
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Railway CLI
+      run: npm i -g @railway/cli
+    
+    - name: Deploy to Railway
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      run: railway up --service backend
+    
+    - name: Verify deployment
+      run: |
+        echo "Backend deployed to Railway"
+        echo "Check status at: https://railway.app/dashboard"
+
+  # Futuro: Deploy para Render (produção)
+  # deploy-render:
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   
+  #   - name: Deploy to Render
+  #     env:
+  #       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+  #       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+  #     run: |
+  #       curl -X POST \
+  #         -H "Authorization: Bearer $RENDER_API_KEY" \
+  #         "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys"
