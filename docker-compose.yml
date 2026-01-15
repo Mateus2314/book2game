@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   # Armazena dados persistentes: usuários, livros, jogos, recomendações
