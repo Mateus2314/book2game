@@ -3,6 +3,7 @@ import Config from 'react-native-config';
 import {authStorage} from '../auth/authStorage';
 
 const API_URL = Config.API_URL || 'http://localhost:8000/api/v1';
+console.log('API_URL usado:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,

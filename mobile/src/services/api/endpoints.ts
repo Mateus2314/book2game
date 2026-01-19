@@ -21,6 +21,7 @@ import type {
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/login', data);
+    console.log('Resposta do login:', response);
     return response.data;
   },
 
