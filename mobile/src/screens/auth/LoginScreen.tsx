@@ -33,6 +33,7 @@ export function LoginScreen({navigation}: AuthStackScreenProps<'Login'>) {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: async data => {
+      console.log('Login successful, saving tokens and user data:', data);
       await authStorage.setTokens(
         data.access_token,
         data.refresh_token,
@@ -42,11 +43,34 @@ export function LoginScreen({navigation}: AuthStackScreenProps<'Login'>) {
       setAuthenticated(true);
     },
     onError: error => {
-      setSnackbarMessage(handleError(error));
+      // Adiciona log para debug
+      console.log('Login error:', error);
+      // Tenta extrair mensagem amigável se for array de erros
+      let message = handleError(error);
+      if (Array.isArray(error)) {
+        message = error.map(e => e.msg).join(' | ');
+      } else {
+        const errAny = error as any;
+        if (errAny?.response?.data && Array.isArray(errAny.response.data)) {
+          message = errAny.response.data.map((e: any) => e.msg).join(' | ');
+        }
+      }
+      // Garante que sempre seja string
+      if (typeof message === 'string') {
+        setSnackbarMessage(message);
+      } else if (Array.isArray(message)) {
+        const arr = message as any[];
+        setSnackbarMessage(arr.map(e => typeof e === 'string' ? e : JSON.stringify(e)).join(' | '));
+      } else if (typeof message === 'object' && message !== null) {
+        setSnackbarMessage(JSON.stringify(message));
+      } else {
+        setSnackbarMessage(String(message));
+      }
     },
   });
-
+  
   const onSubmit = (data: LoginFormData) => {
+    console.log('Submitting login with data:', data);
     loginMutation.mutate(data);
   };
 
@@ -107,7 +131,7 @@ export function LoginScreen({navigation}: AuthStackScreenProps<'Login'>) {
                     onPress={() => setShowPassword(!showPassword)}
                   />
                 }
-              />
+                />
             )}
           />
           {errors.password && (

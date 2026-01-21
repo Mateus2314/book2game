@@ -10,6 +10,7 @@ export const authStorage = {
   },
 
   async setAccessToken(token: string): Promise<void> {
+    console.log('[authStorage] setAccessToken:', token);
     await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);
   },
 
@@ -18,6 +19,7 @@ export const authStorage = {
   },
 
   async setRefreshToken(token: string): Promise<void> {
+    console.log('[authStorage] setRefreshToken:', token);
     await AsyncStorage.setItem(REFRESH_TOKEN_KEY, token);
   },
 
@@ -27,6 +29,7 @@ export const authStorage = {
   },
 
   async setUser(user: any): Promise<void> {
+    console.log('[authStorage] setUser:', user);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
@@ -43,6 +46,7 @@ export const authStorage = {
     refreshToken: string,
     user: any,
   ): Promise<void> {
+    console.log('[authStorage] setTokens:', { accessToken, refreshToken, user });
     await AsyncStorage.multiSet([
       [ACCESS_TOKEN_KEY, accessToken],
       [REFRESH_TOKEN_KEY, refreshToken],

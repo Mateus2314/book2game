@@ -65,10 +65,18 @@
       "_type": "request",
       "name": "Login",
       "description": "Login com email/senha (retorna access_token e refresh_token)",
-      "url": "{{ _.base_url }}/auth/login?email={{ _.test_email }}&password={{ _.test_password }}",
+      "url": "{{ _.base_url }}/auth/login",
       "method": "POST",
-      "body": {},
-      "headers": [],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          { "name": "email", "value": "{{ _.test_email }}" },
+          { "name": "password", "value": "{{ _.test_password }}" }
+        ]
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+      ],
       "parentId": "fld_auth"
     },
     {

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from fastapi import Form, APIRouter, Body, Depends, HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, decode_token, validate_email
 from app.crud import user as crud_user
-from app.schemas.user import Token, User, UserCreate
+from app.schemas.user import Token, User as UserSchema , UserCreate
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")  # Strict rate limiting for registration
 async def register(
     request: Request,
@@ -42,17 +42,26 @@ async def register(
     
     # Create user
     user = crud_user.create_user(db, user_in)
-    return user
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
+    refresh_token = create_refresh_token(data={"sub": str(user.id), "email": user.email})
+    user_schema = UserSchema.model_validate(user)
+    return Token(
+        access_token=access_token, 
+        refresh_token=refresh_token,
+        token_type="bearer",
+        user=user_schema
+        )
 
 
 @router.post("/login", response_model=Token)
 @limiter.limit("5/minute")  # Strict rate limiting for login (anti-brute force)
 async def login(
     request: Request,
-    email: str,
-    password: str,
+    email: str = Form(...),
+    password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    print("Login Backend :", email, password)
     """
     Login with email and password.
     Rate limited to 5 requests per minute to prevent brute force attacks.
@@ -82,8 +91,13 @@ async def login(
     # Create tokens (sub must be string per JWT spec)
     access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
     refresh_token = create_refresh_token(data={"sub": str(user.id), "email": user.email})
-    
-    return Token(access_token=access_token, refresh_token=refresh_token)
+    user_schema = UserSchema.model_validate(user)
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token, 
+        token_type="bearer", 
+        user=user_schema
+        )
 
 
 @router.post("/refresh-token", response_model=Token)

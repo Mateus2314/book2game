@@ -1,4 +1,5 @@
 import {api} from './axios';
+import qs from 'qs';
 import type {
   LoginRequest,
   RegisterRequest,
@@ -20,10 +21,14 @@ import type {
 // Auth endpoints
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login', data);
-    console.log('Resposta do login:', response);
-    return response.data;
-  },
+  const response = await api.post<AuthResponse>(
+    '/auth/login',
+    qs.stringify(data), // transforma em x-www-form-urlencoded
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  );
+  console.log('Login response data:', response);
+  return response.data;
+},
 
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/register', data);

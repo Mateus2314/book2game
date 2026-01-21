@@ -7,10 +7,7 @@ console.log('API_URL usado:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 30000
 });
 
 // Request interceptor - add auth token
