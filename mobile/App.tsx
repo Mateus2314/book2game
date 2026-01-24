@@ -1,3 +1,4 @@
+import 'react-native-reanimated';
 import React from 'react';
 import {SafeAreaView, StatusBar, StyleSheet} from 'react-native';
 import {PaperProvider} from 'react-native-paper';

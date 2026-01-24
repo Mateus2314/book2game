@@ -27,7 +27,7 @@ export function LibraryScreen() {
 
   const renderItem = ({item}: {item: any}) => {
     if (tab === 'books') {
-      return <BookCard book={item.book} />;
+      return <BookCard book={item.book} inLibrary={true} />;
     }
     return <GameCard game={item.game} />;
   };

@@ -9,6 +9,7 @@ from app.crud import book as crud_book
 from app.models.user import User
 from app.schemas.book import Book, BookCreate
 from app.services.external import google_books_service
+from app.services.external.google_books_mapper import google_json_to_book
 
 router = APIRouter()
 
@@ -33,22 +34,18 @@ async def search_books(
             max_results=max_results,
             start_index=start_index,
         )
-        
-        if not results or "items" not in results:
-            return {
-                "total_items": 0,
-                "items": [],
-                "query": query,
-            }
-        
+
+        items = results.get("items", [])
+        mapped_items = [google_json_to_book(item) for item in items]
+
         return {
             "total_items": results.get("totalItems", 0),
-            "items": results.get("items", []),
+            "items": mapped_items,
             "query": query,
             "max_results": max_results,
             "start_index": start_index,
         }
-        
+    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

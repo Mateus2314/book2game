@@ -50,7 +50,11 @@ export const booksApi = {
     page: number = 1,
   ): Promise<BookSearchResponse> => {
     const response = await api.get<BookSearchResponse>('/books/search', {
-      params: {q: query, page},
+      params: {
+        query, // termo de busca
+        max_results: 10, // ou o valor desejado
+        start_index: (page - 1) * 10, // para paginação correta
+      },
     });
     return response.data;
   },
@@ -130,11 +134,11 @@ export const usersApi = {
 
   // Book library
   getBookLibrary: async (
-    favorite?: boolean,
-    status?: string,
+    skip = 0,
+    limit = 50,
   ): Promise<UserBook[]> => {
-    const response = await api.get<UserBook[]>('/users/library', {
-      params: {favorite, status},
+    const response = await api.get<UserBook[]>('/users/me/books', {
+      params: {skip, limit},
     });
     return response.data;
   },
@@ -142,7 +146,7 @@ export const usersApi = {
   addBookToLibrary: async (
     data: AddBookToLibraryRequest,
   ): Promise<UserBook> => {
-    const response = await api.post<UserBook>('/users/library', data);
+    const response = await api.post<UserBook>(`/users/me/books/from-google/${data.google_books_id}`);
     return response.data;
   },
 

@@ -47,7 +47,32 @@ class BookInDB(BookBase):
 
 class Book(BookInDB):
     """Public book schema."""
-    pass
+    # Sempre expor authors e categories como array
+    authors: Optional[List[str]] = None
+    categories: Optional[List[str]] = None
+
+    # Removido from_orm: use model_validate(obj, from_attributes=True) no endpoint
+
+    @classmethod
+    def _to_list(cls, v):
+        if v is None or v == '':
+            return []
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(',') if i.strip()]
+        if isinstance(v, list):
+            return v
+        return []
+
+    from pydantic import field_validator
+    @field_validator('authors', mode='before')
+    def authors_validator(cls, v):
+        return cls._to_list(v)
+
+    @field_validator('categories', mode='before')
+    def categories_validator(cls, v):
+        return cls._to_list(v)
+
+
 
 
 class BookSearchResult(BaseModel):

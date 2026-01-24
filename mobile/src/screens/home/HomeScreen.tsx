@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {Searchbar, ActivityIndicator, Surface} from 'react-native-paper';
-import {useInfiniteQuery} from '@tanstack/react-query';
-import {booksApi} from '../../services/api/endpoints';
+import {useInfiniteQuery, useQuery, useQueryClient} from '@tanstack/react-query';
+import {booksApi, usersApi} from '../../services/api/endpoints';
 import {BookCard} from '../../components/books/BookCard';
 import {EmptyState} from '../../components/common/EmptyState';
 import {useDebounce} from '../../hooks/useDebounce';
@@ -10,8 +10,10 @@ import type {HomeStackScreenProps} from '../../types/navigation';
 import type {Book} from '../../types/api';
 
 export function HomeScreen({navigation}: HomeStackScreenProps<'HomeScreen'>) {
+  
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 500);
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -33,14 +35,46 @@ export function HomeScreen({navigation}: HomeStackScreenProps<'HomeScreen'>) {
     initialPageParam: 1,
   });
 
+  // Busca biblioteca do usuário para saber quais livros já estão adicionados
+  const {data: userBooks = []} = useQuery({
+    queryKey: ['bookLibrary'],
+    queryFn: () => usersApi.getBookLibrary(),
+  });
+
+  // Log sempre que userBooks mudar
+  React.useEffect(() => {
+    console.log('[HomeScreen] userBooks:', userBooks);
+  }, [userBooks]);
+
+  // Função para checar se o livro está na biblioteca
+  const isInLibrary = (book: Book) =>
+    userBooks.some((ub: any) => ub.book?.google_books_id === book.google_books_id);
+
+  // Handler para atualizar cache ao adicionar/remover
+  const handleLibraryChange = async (google_books_id: string, added: boolean) => {
+    await queryClient.invalidateQueries({ queryKey: ['bookLibrary'] });
+    await queryClient.refetchQueries({ queryKey: ['bookLibrary'] });
+ // Adiciona um pequeno delay para garantir que o cache seja atualizado
+    setTimeout(() => {
+      console.log('[HomeScreen] Cache atualizado após alteração na biblioteca.', userBooks);
+    }, 500); 
+
+  };
+
   const books = data?.pages.flatMap(page => page.items) ?? [];
 
-  const renderItem = ({item}: {item: Book}) => (
-    <BookCard
-      book={item}
-      onPress={() => navigation.navigate('BookDetails', {book: item})}
-    />
-  );
+  const renderItem = ({item}: {item: Book}) => {
+    const inLib = isInLibrary(item);
+    console.log('[HomeScreen] renderItem:', item.title, 'inLibrary:', inLib);
+    return (
+      <BookCard
+        book={item}
+        inLibrary={inLib}
+        onLibraryChange={added => handleLibraryChange(item.google_books_id, added)}
+        onPress={() => navigation.navigate('BookDetails', {book: item})}
+      />
+    );
+  };
 
   const renderFooter = () => {
     if (!isFetchingNextPage) {
@@ -98,7 +132,7 @@ export function HomeScreen({navigation}: HomeStackScreenProps<'HomeScreen'>) {
       <FlatList
         data={books}
         renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
+        keyExtractor={(item, index) => `${item.google_books_id}-${index}`}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
         onEndReached={handleLoadMore}

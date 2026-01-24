@@ -41,15 +41,13 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Log request
-        logger.info(
-            f"Request started",
-            extra={
-                "request_id": request_id,
-                "method": request.method,
-                "path": request.url.path,
-                "client_host": request.client.host if request.client else None,
-            },
-        )
+        logger.bind(
+            type="request",
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+            client_host=request.client.host if request.client else None,
+        ).info("Request started")
         
         # Process request
         try:
@@ -59,16 +57,14 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             duration_ms = int((time.time() - start_time) * 1000)
             
             # Log response
-            logger.info(
-                f"Request completed",
-                extra={
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status_code": response.status_code,
-                    "duration_ms": duration_ms,
-                },
-            )
+            logger.bind(
+                type="response",
+                request_id=request_id,
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                duration_ms=duration_ms,
+            ).info("Request completed")
             
             # Add request ID to response headers
             response.headers["X-Request-ID"] = request_id
@@ -78,16 +74,14 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             duration_ms = int((time.time() - start_time) * 1000)
             
-            logger.error(
-                f"Request failed: {str(e)}",
-                extra={
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "duration_ms": duration_ms,
-                    "error": str(e),
-                },
-            )
+            logger.bind(
+                type="error",
+                request_id=request_id,
+                method=request.method,
+                path=request.url.path,
+                duration_ms=duration_ms,
+                error=str(e),
+            ).error(f"Request failed: {str(e)}")
             raise
 
 

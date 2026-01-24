@@ -35,14 +35,14 @@ export interface Book {
   id: number;
   google_books_id: string;
   title: string;
-  authors: string[];
+  authors?: string[] | string;
   publisher?: string;
   published_date?: string;
   description?: string;
   isbn_10?: string;
   isbn_13?: string;
   page_count?: number;
-  categories?: string[];
+  categories?: string[] | string;
   language: string;
   image_url?: string;
   preview_link?: string;

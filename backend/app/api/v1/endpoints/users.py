@@ -89,8 +89,7 @@ async def get_my_library(
         favorite_only=favorite_only,
         reading_status=reading_status,
     )
-    return user_books
-
+    return [UserBookWithBook.model_validate(ub) for ub in user_books]
 
 @router.post("/me/books/from-google/{google_books_id}", response_model=UserBookWithBook, status_code=status.HTTP_201_CREATED)
 async def add_book_to_library_from_google(
