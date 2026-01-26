@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {Surface, SegmentedButtons, ActivityIndicator} from 'react-native-paper';
-import {useQuery} from '@tanstack/react-query';
+import {useQuery, useQueryClient } from '@tanstack/react-query';
 import {usersApi} from '../../services/api/endpoints';
 import {BookCard} from '../../components/books/BookCard';
 import {GameCard} from '../../components/games/GameCard';
@@ -9,6 +9,7 @@ import {EmptyState} from '../../components/common/EmptyState';
 
 export function LibraryScreen() {
   const [tab, setTab] = useState('books');
+  const queryClient = useQueryClient();
 
   const {data: books = [], isLoading: booksLoading} = useQuery({
     queryKey: ['bookLibrary'],
@@ -25,9 +26,14 @@ export function LibraryScreen() {
   const isLoading = tab === 'books' ? booksLoading : gamesLoading;
   const data = tab === 'books' ? books : games;
 
+  const handleLibraryChange = async () => {
+    await queryClient.invalidateQueries({ queryKey: tab === 'books' ? ['bookLibrary'] : ['gameLibrary'] });
+    await queryClient.refetchQueries({ queryKey: tab === 'books' ? ['bookLibrary'] : ['gameLibrary'] });
+  };
+
   const renderItem = ({item}: {item: any}) => {
     if (tab === 'books') {
-      return <BookCard book={item.book} inLibrary={true} />;
+      return <BookCard book={item.book} userBookId={item.book_id} inLibrary={true} onLibraryChange={handleLibraryChange} />;
     }
     return <GameCard game={item.game} />;
   };

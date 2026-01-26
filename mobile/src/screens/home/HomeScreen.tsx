@@ -50,6 +50,10 @@ export function HomeScreen({navigation}: HomeStackScreenProps<'HomeScreen'>) {
   const isInLibrary = (book: Book) =>
     userBooks.some((ub: any) => ub.book?.google_books_id === book.google_books_id);
 
+  // Buscar o UserBook correspondente ao livro
+  const getUserBook = (book: Book) =>
+    userBooks.find((ub: any) => ub.book?.google_books_id === book.google_books_id);
+
   // Handler para atualizar cache ao adicionar/remover
   const handleLibraryChange = async (google_books_id: string, added: boolean) => {
     await queryClient.invalidateQueries({ queryKey: ['bookLibrary'] });
@@ -65,10 +69,12 @@ export function HomeScreen({navigation}: HomeStackScreenProps<'HomeScreen'>) {
 
   const renderItem = ({item}: {item: Book}) => {
     const inLib = isInLibrary(item);
+    const userBook = getUserBook(item);
     console.log('[HomeScreen] renderItem:', item.title, 'inLibrary:', inLib);
     return (
       <BookCard
         book={item}
+        userBookId={userBook?.book_id}
         inLibrary={inLib}
         onLibraryChange={added => handleLibraryChange(item.google_books_id, added)}
         onPress={() => navigation.navigate('BookDetails', {book: item})}

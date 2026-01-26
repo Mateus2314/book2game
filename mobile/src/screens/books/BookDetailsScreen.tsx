@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {ScrollView, StyleSheet, View} from 'react-native';
+import React, {useState, useMemo} from 'react';
+import {ScrollView, StyleSheet, View, TouchableOpacity} from 'react-native';
 import {
   Text,
   Button,
@@ -10,8 +10,11 @@ import {
   ActivityIndicator,
   Snackbar,
 } from 'react-native-paper';
-import {useMutation} from '@tanstack/react-query';
-import {recommendationsApi} from '../../services/api/endpoints';
+// @ts-ignore
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Animated, {useSharedValue, useAnimatedStyle, withSpring} from 'react-native-reanimated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {recommendationsApi, usersApi} from '../../services/api/endpoints';
 import {useErrorHandler} from '../../hooks/useErrorHandler';
 import type {HomeStackScreenProps} from '../../types/navigation';
 
@@ -23,6 +26,59 @@ export function BookDetailsScreen({
   const [dialogVisible, setDialogVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const {handleError} = useErrorHandler();
+  const queryClient = useQueryClient();
+
+  // Busca biblioteca do usuário para saber se o livro está nela
+  const {data: userBooks = [], isLoading: userBooksLoading} = useQuery({
+    queryKey: ['bookLibrary'],
+    queryFn: () => usersApi.getBookLibrary(),
+  });
+
+  // Função para checar se o livro está na biblioteca
+  const isInLibrary = useMemo(() =>
+    userBooks.some((ub: any) => ub.book?.google_books_id === book.google_books_id),
+    [userBooks, book.google_books_id]
+  );
+  // Busca o UserBook correspondente
+  const userBook = useMemo(() =>
+    userBooks.find((ub: any) => ub.book?.google_books_id === book.google_books_id),
+    [userBooks, book.google_books_id]
+  );
+
+  // Animação do botão
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{scale: scale.value}],
+  }));
+
+  // Mutations para adicionar/remover
+  const addMutation = useMutation({
+    mutationFn: () => usersApi.addBookToLibrary({google_books_id: book.google_books_id}),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['bookLibrary'] });
+      setSnackbarMessage('Livro adicionado à biblioteca!');
+    },
+    onError: error => setSnackbarMessage(handleError(error)),
+  });
+  const removeMutation = useMutation({
+    mutationFn: () => usersApi.removeBookFromLibrary(userBook?.book_id ?? book.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['bookLibrary'] });
+      setSnackbarMessage('Livro removido da biblioteca!');
+    },
+    onError: error => setSnackbarMessage(handleError(error)),
+  });
+
+  const handleLibraryToggle = async () => {
+    scale.value = withSpring(1.2, { damping: 10, stiffness: 200 }, () => {
+      scale.value = withSpring(1);
+    });
+    if (isInLibrary) {
+      removeMutation.mutate();
+    } else {
+      addMutation.mutate();
+    }
+  };
 
   const recommendationMutation = useMutation({
     mutationFn: recommendationsApi.create,
@@ -44,13 +100,27 @@ export function BookDetailsScreen({
   return (
     <Surface style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineSmall" style={styles.title}>
-          {book.title}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text variant="headlineSmall" style={styles.title}>
+            {book.title}
+          </Text>
+          <Animated.View style={animatedStyle}>
+            <TouchableOpacity
+              onPress={handleLibraryToggle}
+              disabled={addMutation.isPending || removeMutation.isPending || userBooksLoading}
+              style={styles.bookmarkButton}>
+              <MaterialCommunityIcons
+                name={isInLibrary ? 'bookmark-check' : 'bookmark-plus-outline'}
+                size={32}
+                color={isInLibrary ? '#1976d2' : '#aaa'}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
 
         {book.authors && book.authors.length > 0 && (
           <Text variant="titleMedium" style={styles.authors}>
-            {book.authors.join(', ')}
+            {Array.isArray(book.authors) ? book.authors.join(', ') : book.authors}
           </Text>
         )}
 
@@ -100,7 +170,7 @@ export function BookDetailsScreen({
               Categorias
             </Text>
             <View style={styles.categories}>
-              {book.categories.map((category, index) => (
+              {(Array.isArray(book.categories) ? book.categories : String(book.categories).split(',')).map((category, index) => (
                 <Chip key={index} mode="outlined" style={styles.chip}>
                   {category}
                 </Chip>
@@ -115,7 +185,7 @@ export function BookDetailsScreen({
               Descrição
             </Text>
             <Text variant="bodyMedium" style={styles.description}>
-              {book.description}
+              {typeof book.description === 'string' ? book.description.replace(/<[^>]+>/g, '') : ''}
             </Text>
           </View>
         )}
@@ -236,5 +306,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     color: '#79747E',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bookmarkButton: {
+    marginLeft: 8,
   },
 });

@@ -164,7 +164,7 @@ export const usersApi = {
   },
 
   removeBookFromLibrary: async (bookId: number): Promise<void> => {
-    await api.delete(`/users/library/${bookId}`);
+    await api.delete(`/users/me/books/${bookId}`);
   },
 
   // Game library
