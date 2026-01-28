@@ -28,6 +28,7 @@ export type HomeStackScreenProps<T extends keyof HomeStackParamList> =
 // Library Stack
 export type LibraryStackParamList = {
   LibraryScreen: undefined;
+  BookDetails: {book: Book};
 };
 
 export type LibraryStackScreenProps<T extends keyof LibraryStackParamList> =

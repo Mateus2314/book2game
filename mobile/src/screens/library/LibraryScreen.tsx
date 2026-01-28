@@ -2,14 +2,18 @@ import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {Surface, SegmentedButtons, ActivityIndicator} from 'react-native-paper';
 import {useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import {usersApi} from '../../services/api/endpoints';
 import {BookCard} from '../../components/books/BookCard';
 import {GameCard} from '../../components/games/GameCard';
 import {EmptyState} from '../../components/common/EmptyState';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { LibraryStackParamList } from '@/types/navigation';
 
 export function LibraryScreen() {
   const [tab, setTab] = useState('books');
   const queryClient = useQueryClient();
+  const navigation = useNavigation<StackNavigationProp<LibraryStackParamList>>(); ;
 
   const {data: books = [], isLoading: booksLoading} = useQuery({
     queryKey: ['bookLibrary'],
@@ -33,7 +37,12 @@ export function LibraryScreen() {
 
   const renderItem = ({item}: {item: any}) => {
     if (tab === 'books') {
-      return <BookCard book={item.book} userBookId={item.book_id} inLibrary={true} onLibraryChange={handleLibraryChange} />;
+      return <BookCard 
+      book={item.book} 
+      userBookId={item.book_id} 
+      inLibrary={true} 
+      onLibraryChange={handleLibraryChange} 
+      onPress={() => navigation.navigate('BookDetails', {book: item.book})} />;
     }
     return <GameCard game={item.game} />;
   };

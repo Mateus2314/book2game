@@ -68,6 +68,11 @@ function LibraryNavigator() {
         component={LibraryScreen}
         options={{title: 'Minha Biblioteca'}}
       />
+      <LibraryStack.Screen
+        name="BookDetails"
+        component={BookDetailsScreen}
+        options={{title: 'Detalhes do Livro'}}
+      />
     </LibraryStack.Navigator>
   );
 }
