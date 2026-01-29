@@ -24,7 +24,7 @@ export function BookDetailsScreen({
 }: HomeStackScreenProps<'BookDetails'>) {
   const {book} = route.params;
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarMessage, setSnackbarMessage] = useState<string | { msg: string } | Array<{ msg: string }>>('');
   const {handleError} = useErrorHandler();
   const queryClient = useQueryClient();
 
@@ -94,7 +94,9 @@ export function BookDetailsScreen({
 
   const handleGetRecommendations = () => {
     setDialogVisible(true);
-    recommendationMutation.mutate({google_books_id: book.google_books_id});
+    recommendationMutation.mutate({
+      book_id: book.id,
+    });
   };
 
   return (
@@ -236,7 +238,13 @@ export function BookDetailsScreen({
           label: 'OK',
           onPress: () => setSnackbarMessage(''),
         }}>
-        {snackbarMessage}
+        {typeof snackbarMessage === 'string'
+          ? snackbarMessage
+          : Array.isArray(snackbarMessage)
+            ? snackbarMessage.map((e: any) => e.msg).join(' \n ')
+            : snackbarMessage && snackbarMessage.msg
+              ? snackbarMessage.msg
+              : JSON.stringify(snackbarMessage)}
       </Snackbar>
     </Surface>
   );

@@ -42,7 +42,17 @@ export function useErrorHandler() {
         return apiError.detail;
       }
 
-      return 'Erro desconhecido. Tente novamente.';
+      // FastAPI/Pydantic validation error (array de objetos)
+      if(Array.isArray(apiError)) {
+        //Extrai todas as mensagens 'msg' e junta em uma única string
+        return apiError.map(err => err.msg).join(' \n ');
+      }
+      //Caso venha um objeto com msg
+      if(apiError?.msg) {
+        return apiError.msg;
+      }
+
+      return 'Erro ao comunicar com a API. Tente novamente.';
     }
 
     if (error instanceof Error) {

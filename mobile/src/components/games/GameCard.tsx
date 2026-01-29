@@ -46,15 +46,23 @@ export function GameCard({game, similarityScore, onPress}: GameCardProps) {
           </Text>
         )}
 
-        {game.genres && game.genres.length > 0 && (
-          <View style={styles.genres}>
-            {game.genres.slice(0, 3).map((genre, index) => (
-              <Chip key={index} mode="outlined" style={styles.chip} compact>
-                {genre}
-              </Chip>
-            ))}
-          </View>
-        )}
+        {(() => {
+          let genresArray: string[] = [];
+          if (Array.isArray(game.genres)) {
+            genresArray = game.genres;
+          } else if (typeof game.genres === 'string') {
+            genresArray = (game.genres as string).split(',').map((g: string) => g.trim());
+          }
+          return genresArray.length > 0 ? (
+            <View style={styles.genres}>
+              {genresArray.slice(0, 3).map((genre: string, index: number) => (
+                <Chip key={index} mode="outlined" style={styles.chip} compact>
+                  {genre}
+                </Chip>
+              ))}
+            </View>
+          ) : null;
+        })()}
 
         {similarityScore !== undefined && (
           <View style={styles.similarity}>

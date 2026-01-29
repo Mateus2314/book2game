@@ -319,8 +319,32 @@ class RecommendationService:
             try:
                 score = self.calculate_similarity_score(game, book_features, tags)
                 if score >= 0.5:  # Threshold mínimo
+                    # Salva/recupera o jogo no banco para obter o id interno
+                    rawg_id = game.get("rawg_id") or game.get("id")
+                    if not rawg_id:
+                        logger.error(f"Game {game.get('name')} has no rawg_id, skipping for id mapping")
+                        continue
+                    game_create = GameCreate(
+                        rawg_id=rawg_id,
+                        name=game.get("name"),
+                        slug=game.get("slug"),
+                        description=game.get("description"),
+                        released=game.get("released"),
+                        rating=game.get("rating"),
+                        ratings_count=game.get("ratings_count"),
+                        metacritic=game.get("metacritic"),
+                        playtime=game.get("playtime"),
+                        genres=game.get("genres"),
+                        tags=game.get("tags"),
+                        platforms=game.get("platforms"),
+                        developers=game.get("developers"),
+                        publishers=game.get("publishers"),
+                        image_url=game.get("image_url"),
+                        website=game.get("website"),
+                    )
+                    game_db = crud_game.get_or_create_game(db, game_create)
                     game_recommendations.append({
-                        "game_id": game.get("id"),
+                        "game_id": game_db.id,  # Usa o id interno do banco
                         "name": game.get("name", "Unknown"),
                         "score": score,
                         "rating": game.get("rating"),
@@ -346,48 +370,40 @@ class RecommendationService:
         # Calculate overall similarity score
         avg_score = sum(g["score"] for g in game_recommendations) / len(game_recommendations)
         
-        # 7. Save Llama-generated games to database
-        for game_rec in game_recommendations:
-            # Busca o jogo completo gerado pela IA
-            game_full_data = next((g for g in games if g.get("id") == game_rec.get("game_id")), None)
-            if game_full_data:
-                try:
-                    # Valida dados obrigatórios
-                    rawg_id = game_full_data.get("rawg_id")
-                    if not rawg_id:
-                        logger.error(f"Game {game_full_data.get('name')} has no rawg_id, skipping")
-                        continue
-                    
-                    logger.info(f"Saving game: {game_full_data.get('name')} (ID: {game_full_data.get('id')})")
-                    
-                    # Cria GameCreate a partir dos dados gerados
-                    game_create = GameCreate(
-                        rawg_id=rawg_id,
-                        name=game_full_data.get("name"),
-                        slug=game_full_data.get("slug"),
-                        description=game_full_data.get("description"),
-                        released=game_full_data.get("released"),
-                        rating=game_full_data.get("rating"),
-                        ratings_count=game_full_data.get("ratings_count"),
-                        metacritic=game_full_data.get("metacritic"),
-                        playtime=game_full_data.get("playtime"),
-                        genres=game_full_data.get("genres"),
-                        tags=game_full_data.get("tags"),
-                        platforms=game_full_data.get("platforms"),
-                        developers=game_full_data.get("developers"),
-                        publishers=game_full_data.get("publishers"),
-                        image_url=game_full_data.get("image_url"),
-                        website=game_full_data.get("website"),
-                    )
-                    crud_game.get_or_create_game(db, game_create)
-                    logger.info(f"Game saved successfully: {game_full_data.get('name')}")
-                except Exception as e:
-                    logger.error(f"Error saving game {game_full_data.get('name')}: {e}")
-                    logger.error(f"Game data: {game_full_data}")
-                    # NÃO faz raise - continua com os outros jogos
+        # 7. Save all recommended games to database (garante que todos estão salvos)
+        from app.crud import user_game as crud_user_game     # Import aqui para evitar circular imports
+        for game in games[:10]:
+            try:
+                rawg_id = game.get("rawg_id") or game.get("id")
+                if not rawg_id:
+                    logger.error(f"Game {game.get('name')} has no rawg_id, skipping save")
                     continue
-            else:
-                logger.warning(f"Game not found in full data: {game_rec.get('game_id')}")
+                game_create = GameCreate(
+                    rawg_id=rawg_id,
+                    name=game.get("name"),
+                    slug=game.get("slug"),
+                    description=game.get("description"),
+                    released=game.get("released"),
+                    rating=game.get("rating"),
+                    ratings_count=game.get("ratings_count"),
+                    metacritic=game.get("metacritic"),
+                    playtime=game.get("playtime"),
+                    genres=game.get("genres"),
+                    tags=game.get("tags"),
+                    platforms=game.get("platforms"),
+                    developers=game.get("developers"),
+                    publishers=game.get("publishers"),
+                    image_url=game.get("image_url"),
+                    website=game.get("website"),
+                )
+                game_db = crud_game.get_or_create_game(db, game_create)
+                # Adiciona o jogo à biblioteca do usuário
+                crud_user_game.add_to_library(db, user_id, game_db.id)
+                logger.info(f"Game saved and added to user library: {game.get('name')}")
+            except Exception as e:
+                logger.error(f"Error saving game {game.get('name')}: {e}")
+                logger.error(f"Game data: {game}")
+                continue
         
         # Save recommendation
         games_json = json.dumps([{"game_id": g["game_id"], "score": g["score"]} for g in game_recommendations])

@@ -5,19 +5,23 @@ import {useQuery} from '@tanstack/react-query';
 import {gamesApi} from '../../services/api/endpoints';
 import {GameCard} from '../../components/games/GameCard';
 import {GameDetailsModal} from '../../components/games/GameDetailsModal';
-import type {HomeStackScreenProps} from '../../types/navigation';
+import type {LibraryStackScreenProps} from '../../types/navigation';
+
+type RecommendationResultsScreenProps = LibraryStackScreenProps<'RecommendationResults'>;
 import type {Game} from '../../types/api';
 
-export function RecommendationResultsScreen({
-  route,
-}: HomeStackScreenProps<'RecommendationResults'>) {
+
+export function RecommendationResultsScreen({ route }: RecommendationResultsScreenProps) {
   const {recommendation} = route.params;
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
+  // Garante que games sempre será um array
+  const gamesList = recommendation.games ?? recommendation.recommended_games ?? [];
+
   const {data: games = []} = useQuery({
-    queryKey: ['games', recommendation.games.map(g => g.game_id)],
+    queryKey: ['games', gamesList.map(g => g.game_id)],
     queryFn: async () => {
-      const gamePromises = recommendation.games.map(g =>
+      const gamePromises = gamesList.map(g =>
         gamesApi.getById(g.game_id),
       );
       return await Promise.all(gamePromises);
@@ -26,7 +30,7 @@ export function RecommendationResultsScreen({
 
   const gamesWithScores = games.map((game, index) => ({
     game,
-    score: recommendation.games[index]?.score || 0,
+    score: gamesList[index]?.score || 0,
   }));
 
   const renderItem = ({item}: {item: {game: Game; score: number}}) => (

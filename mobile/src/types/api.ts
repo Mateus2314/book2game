@@ -91,6 +91,7 @@ export interface Recommendation {
   user_id: number;
   book_id: number;
   games: RecommendationGame[];
+  recommended_games?: RecommendationGame[];
   ai_generated: boolean;
   similarity_score: number;
   processing_time_ms: number;
@@ -101,7 +102,7 @@ export interface Recommendation {
 }
 
 export interface CreateRecommendationRequest {
-  google_books_id: string;
+  book_id?: number;
 }
 
 // Library types
@@ -168,7 +169,6 @@ export interface UpdateGameMetadataRequest {
 }
 
 // Error types
-export interface ApiError {
-  detail: string;
-  status?: number;
-}
+export type ApiError =
+  | { detail: string; status?: number }
+  | Array<{ loc: any; msg: string; type: string; input?: any; url?: string }>;
