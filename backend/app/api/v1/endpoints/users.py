@@ -38,8 +38,26 @@ async def update_user_profile(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Update current user profile (email, full_name, password)."""
-    updated_user = crud_user.update_user(db, current_user, user_update)
-    return updated_user
+    from sqlalchemy.exc import IntegrityError
+    
+    # Check if email is being updated and already exists
+    if user_update.email:
+        existing_user = crud_user.get_user_by_email(db, email=user_update.email.lower())
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+    
+    try:
+        updated_user = crud_user.update_user(db, current_user, user_update)
+        return updated_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
 
 
 @router.get("/me/recommendations", response_model=List[Recommendation])

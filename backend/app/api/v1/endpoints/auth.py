@@ -3,6 +3,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, decode_token, validate_email
 from app.crud import user as crud_user
@@ -10,12 +11,22 @@ from app.schemas.user import Token, User as UserSchema , UserCreate
 
 router = APIRouter()
 
-# Rate limiter configuration
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiter configuration (disabled in testing environment)
+if not settings.TESTING:
+    limiter = Limiter(key_func=get_remote_address)
+    def apply_rate_limit(limit_string: str):
+        """Apply rate limiting decorator (only in production)."""
+        return limiter.limit(limit_string)
+else:
+    def apply_rate_limit(limit_string: str):
+        """No-op decorator for testing environment."""
+        def decorator(func):
+            return func
+        return decorator
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")  # Strict rate limiting for registration
+@apply_rate_limit("5/minute")  # Strict rate limiting for registration
 async def register(
     request: Request,
     user_in: UserCreate,
@@ -54,7 +65,7 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
-@limiter.limit("5/minute")  # Strict rate limiting for login (anti-brute force)
+@apply_rate_limit("5/minute")  # Strict rate limiting for login (anti-brute force)
 async def login(
     request: Request,
     email: str = Form(...),
@@ -170,4 +181,8 @@ async def refresh_token(
     new_access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
     new_refresh_token = create_refresh_token(data={"sub": str(user.id), "email": user.email})
     
-    return Token(access_token=new_access_token, refresh_token=new_refresh_token)
+    return Token(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        user=UserSchema.model_validate(user)
+    )

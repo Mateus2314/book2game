@@ -63,15 +63,24 @@ async def get_book_details(
     
     - **book_id**: Google Books ID (e.g., "zyTCAlFPjgYC")
     """
-    book_data = await google_books_service.get_details(book_id)
+    try:
+        book_data = await google_books_service.get_details(book_id)
+        
+        if not book_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Book with ID '{book_id}' not found",
+            )
+        
+        return book_data
     
-    if not book_data:
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Book with ID '{book_id}' not found",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Google Books API error: {str(e)}",
         )
-    
-    return book_data
 
 
 @router.post("/from-google/{google_books_id}", response_model=Book, status_code=status.HTTP_201_CREATED)
@@ -97,7 +106,13 @@ async def create_book_from_google(
         return existing_book
     
     # Fetch book data from Google Books API
-    google_data = await google_books_service.get_details(google_books_id)
+    try:
+        google_data = await google_books_service.get_details(google_books_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Google Books API error: {str(e)}",
+        )
     
     if not google_data:
         raise HTTPException(

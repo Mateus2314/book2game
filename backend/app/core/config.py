@@ -21,16 +21,20 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql://book2game:book2game_dev@localhost:5432/book2game_db"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
+    TEST_DATABASE_URL: str = "postgresql://book2game_test:book2game_test@localhost:5433/book2game_test_db"
+    
+    # Testing
+    TESTING: bool = False
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_TTL: int = 86400  # 24 hours
 
     # Security & Authentication
-    SECRET_KEY: str
+    SECRET_KEY: str = "default-secret-key-change-in-production-min-32-characters"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

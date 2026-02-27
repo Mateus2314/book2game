@@ -76,9 +76,12 @@ class GoogleBooksService:
             
             return data
 
-        except httpx.HTTPError as e:
+        except httpx.HTTPStatusError as e:
             logger.error(f"Google Books API error: {e}")
-            return {"totalItems": 0, "items": []}
+            raise
+        except httpx.HTTPError as e:
+            logger.error(f"Google Books API connection error: {e}")
+            raise
 
     async def get_details(self, book_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -119,9 +122,15 @@ class GoogleBooksService:
             
             return data
 
-        except httpx.HTTPError as e:
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.info(f"Book not found in Google Books API: {book_id}")
+                return None
             logger.error(f"Google Books API error for ID {book_id}: {e}")
-            return None
+            raise
+        except httpx.HTTPError as e:
+            logger.error(f"Google Books API connection error for ID {book_id}: {e}")
+            raise
 
     def parse_book_data(self, volume_data: Dict[str, Any]) -> Dict[str, Any]:
         """

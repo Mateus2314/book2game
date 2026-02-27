@@ -18,11 +18,12 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+# Rate limiter (disabled in testing environment)
+if not settings.TESTING:
+    limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
 # Security headers (helmet-like)
 app.add_middleware(SecurityHeadersMiddleware)

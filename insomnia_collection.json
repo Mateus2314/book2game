@@ -181,7 +181,7 @@
       "_id": "fld_games",
       "_type": "request_group",
       "name": "🎮 Games",
-      "description": "Busca de jogos na base local (jogos gerados por IA via recomendações)",
+      "description": "Busca de jogos na base local (jogos gerados por IA via recomendações). Para detalhes, use o ID interno do banco (nao o rawg_id).",
       "environment": {},
       "parentId": "wrk_book2game"
     },
@@ -205,7 +205,7 @@
       "_id": "req_game_details",
       "_type": "request",
       "name": "Get Game Details",
-      "description": "Detalhes de um jogo específico por ID interno",
+      "description": "Detalhes de um jogo específico por ID interno do banco (nao o rawg_id).",
       "url": "{{ _.base_url }}/games/1",
       "method": "GET",
       "body": {},
@@ -260,7 +260,7 @@
       "_id": "fld_recommendations",
       "_type": "request_group",
       "name": "🤖 Recommendations (AI)",
-      "description": "Sistema de recomendação com IA (limite: 10 requests/hora)",
+      "description": "Sistema de recomendação com IA (limite: 5 requests/minuto)",
       "environment": {},
       "parentId": "wrk_book2game"
     },
@@ -268,7 +268,7 @@
       "_id": "req_generate_recommendation",
       "_type": "request",
       "name": "Generate Recommendation ⭐",
-      "description": "ENDPOINT PRINCIPAL - Gera recomendação de jogos usando IA (Hugging Face)\nLimite: 10 requests/hora\nTimeout: 30 segundos\n\n⚠️ IMPORTANTE: book_id deve ser o ID INTERNO (número), não o Google Books ID.\nPrimeiro crie o livro com POST /books/from-google/{google_books_id}, depois use o ID retornado aqui.",
+      "description": "ENDPOINT PRINCIPAL - Gera recomendação de jogos usando IA (Hugging Face)\nLimite: 5 requests/minuto\nTimeout: 30 segundos\n\n⚠️ IMPORTANTE: book_id deve ser o ID INTERNO (número), não o Google Books ID.\nPrimeiro crie o livro com POST /books/from-google/{google_books_id}, depois use o ID retornado aqui.",
       "url": "{{ _.base_url }}/recommendations/",
       "method": "POST",
       "body": {
