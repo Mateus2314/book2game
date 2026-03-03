@@ -38,6 +38,7 @@ pytest-cov==4.1.0
 factory-boy==3.3.0
 respx==0.20.2
 faker==22.0.0
+freezegun==1.5.1
 
 # Code Quality
 black==24.1.1

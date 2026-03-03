@@ -63,6 +63,11 @@ export const booksApi = {
     const response = await api.get<Book>(`/books/${bookId}`);
     return response.data;
   },
+
+  createFromGoogle: async (googleBooksId: string): Promise<Book> => {
+    const response = await api.post<Book>(`/books/from-google/${googleBooksId}`);
+    return response.data;
+  },
 };
 
 // Recommendations endpoints
@@ -70,7 +75,9 @@ export const recommendationsApi = {
   create: async (
     data: CreateRecommendationRequest,
   ): Promise<Recommendation> => {
-    const response = await api.post<Recommendation>('/recommendations', data);
+    console.log('Sending recommendation request:', JSON.stringify(data, null, 2));
+    const response = await api.post<Recommendation>('/recommendations/', data);
+    console.log('Recommendation response:', JSON.stringify(response.data, null, 2));
     return response.data;
   },
 
@@ -172,7 +179,7 @@ export const usersApi = {
     favorite?: boolean,
     status?: string,
   ): Promise<UserGame[]> => {
-    const response = await api.get<UserGame[]>('/users/game-library', {
+    const response = await api.get<UserGame[]>('/users/me/games', {
       params: {favorite, status},
     });
     return response.data;
@@ -181,8 +188,22 @@ export const usersApi = {
   addGameToLibrary: async (
     data: AddGameToLibraryRequest,
   ): Promise<UserGame> => {
-    const response = await api.post<UserGame>('/users/game-library', data);
-    return response.data;
+    console.log('[usersApi.addGameToLibrary] Sending request:', {
+      url: `/users/me/games/${data.game_id}`,
+      gameId: data.game_id,
+    });
+    try {
+      const response = await api.post<UserGame>(`/users/me/games/${data.game_id}`, {});
+      console.log('[usersApi.addGameToLibrary] Success:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[usersApi.addGameToLibrary] Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.detail || error.message,
+        url: `/users/me/games/${data.game_id}`,
+      });
+      throw error;
+    }
   },
 
   updateGameMetadata: async (
@@ -190,13 +211,13 @@ export const usersApi = {
     data: UpdateGameMetadataRequest,
   ): Promise<UserGame> => {
     const response = await api.put<UserGame>(
-      `/users/game-library/${gameId}`,
+      `/users/me/games/${gameId}`,
       data,
     );
     return response.data;
   },
 
   removeGameFromLibrary: async (gameId: number): Promise<void> => {
-    await api.delete(`/users/game-library/${gameId}`);
+    await api.delete(`/users/me/games/${gameId}`);
   },
 };

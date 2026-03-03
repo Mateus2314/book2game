@@ -92,11 +92,35 @@ export function BookDetailsScreen({
     },
   });
 
-  const handleGetRecommendations = () => {
+  const handleGetRecommendations = async () => {
     setDialogVisible(true);
-    recommendationMutation.mutate({
-      book_id: book.id,
-    });
+    console.log('Book object:', book);
+    console.log('Book ID type:', typeof book.id, 'Value:', book.id);
+    
+    try {
+      // Se o livro não tem ID numérico (veio do Google Books), criar no banco primeiro
+      let bookId = book.id;
+      
+      if (!bookId && book.google_books_id) {
+        console.log('Livro sem ID, criando no banco primeiro...');
+        const createdBook = await booksApi.createFromGoogle(book.google_books_id);
+        bookId = createdBook.id;
+        console.log('Livro criado com ID:', bookId);
+      }
+      
+      if (!bookId) {
+        throw new Error('Não foi possível obter o ID do livro');
+      }
+      
+      const payload = {
+        book_id: bookId,
+      };
+      console.log('Recommendation payload:', JSON.stringify(payload));
+      recommendationMutation.mutate(payload);
+    } catch (error) {
+      setDialogVisible(false);
+      setSnackbarMessage(handleError(error));
+    }
   };
 
   return (
@@ -152,7 +176,7 @@ export function BookDetailsScreen({
               <Text variant="bodySmall" style={styles.metadataLabel}>
                 Páginas:
               </Text>
-              <Text variant="bodyMedium">{book.page_count}</Text>
+              <Text variant="bodyMedium">{String(book.page_count)}</Text>
             </View>
           )}
 
@@ -161,7 +185,7 @@ export function BookDetailsScreen({
               <Text variant="bodySmall" style={styles.metadataLabel}>
                 Idioma:
               </Text>
-              <Text variant="bodyMedium">{book.language.toUpperCase()}</Text>
+              <Text variant="bodyMedium">{String(book.language).toUpperCase()}</Text>
             </View>
           )}
         </View>

@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Any, Dict, Optional
+import os
 
 from pydantic import PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     """Application settings with validation."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=".env.test" if os.getenv("TESTING") == "true" else ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="allow"

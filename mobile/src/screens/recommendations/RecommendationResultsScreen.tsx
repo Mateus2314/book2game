@@ -21,17 +21,28 @@ export function RecommendationResultsScreen({ route }: RecommendationResultsScre
   const {data: games = []} = useQuery({
     queryKey: ['games', gamesList.map(g => g.game_id)],
     queryFn: async () => {
-      const gamePromises = gamesList.map(g =>
-        gamesApi.getById(g.game_id),
-      );
-      return await Promise.all(gamePromises);
+      try {
+        const gamePromises = gamesList.map(g =>
+          gamesApi.getById(g.game_id).catch(error => {
+            console.error(`Erro ao buscar jogo ${g.game_id}:`, error);
+            return null;
+          }),
+        );
+        const results = await Promise.all(gamePromises);
+        return results.filter((game): game is Game => game !== null);
+      } catch (error) {
+        console.error('Erro ao buscar jogos:', error);
+        return [];
+      }
     },
   });
 
-  const gamesWithScores = games.map((game, index) => ({
-    game,
-    score: gamesList[index]?.score || 0,
-  }));
+  const gamesWithScores = games
+    .filter(game => game && game.id) // Filtrar jogos inválidos
+    .map((game) => ({
+      game,
+      score: gamesList.find(g => g.game_id === game.id)?.score || 0,
+    }));
 
   const renderItem = ({item}: {item: {game: Game; score: number}}) => (
     <GameCard
