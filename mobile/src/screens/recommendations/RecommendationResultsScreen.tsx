@@ -59,8 +59,13 @@ export function RecommendationResultsScreen({ route }: RecommendationResultsScre
           Jogos Recomendados
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          {games.length} jogos encontrados para "{recommendation.book?.title}"
+          {games.length} jogos encontrados
         </Text>
+        {recommendation.book?.title && (
+          <Text variant="bodySmall" style={styles.sourceBook}>
+            Recomendado a partir de: {recommendation.book.title}
+          </Text>
+        )}
       </View>
 
       <FlatList
@@ -93,6 +98,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: '#49454F',
+  },
+  sourceBook: {
+    color: '#79747E',
+    marginTop: 4,
   },
   list: {
     paddingVertical: 8,

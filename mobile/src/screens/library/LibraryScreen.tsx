@@ -1,20 +1,19 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {Surface, SegmentedButtons, ActivityIndicator} from 'react-native-paper';
-import {useQuery, useQueryClient } from '@tanstack/react-query';
-import {useNavigation} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {LibraryStackParamList} from '../../types/navigation';
-import {usersApi, gamesApi} from '../../services/api/endpoints';
+import {useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
+import {usersApi} from '../../services/api/endpoints';
 import {BookCard} from '../../components/books/BookCard';
 import {GameCard} from '../../components/games/GameCard';
 import {EmptyState} from '../../components/common/EmptyState';
-
+import { StackNavigationProp } from '@react-navigation/stack';
+import { LibraryStackParamList } from '@/types/navigation';
 
 export function LibraryScreen() {
   const [tab, setTab] = useState('books');
   const queryClient = useQueryClient();
-  const navigation = useNavigation<StackNavigationProp<LibraryStackParamList>>();
+  const navigation = useNavigation<StackNavigationProp<LibraryStackParamList>>(); ;
 
   const {data: books = [], isLoading: booksLoading} = useQuery({
     queryKey: ['bookLibrary'],
@@ -24,23 +23,15 @@ export function LibraryScreen() {
 
   const {data: games = [], isLoading: gamesLoading} = useQuery({
     queryKey: ['gameLibrary'],
-    queryFn: async () => {
-      const userGames = await usersApi.getGameLibrary();
-      // Se o campo 'game' não vier, busca os detalhes pelo game_id
-      const gamesWithDetails = await Promise.all(
-        userGames.map(async (ug: any) => {
-          if (ug.game) return ug;
-          try {
-            const gameDetails = await gamesApi.getById(ug.game_id);
-            return { ...ug, game: gameDetails };
-          } catch {
-            return ug;
-          }
-        })
-      );
-      return gamesWithDetails;
-    },
+    queryFn: () => usersApi.getGameLibrary(),
     enabled: tab === 'games',
+  });
+
+  const removeGameMutation = useMutation({
+    mutationFn: (gameId: number) => usersApi.removeGameFromLibrary(gameId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['gameLibrary'] });
+    },
   });
 
   const isLoading = tab === 'books' ? booksLoading : gamesLoading;
@@ -51,20 +42,21 @@ export function LibraryScreen() {
     await queryClient.refetchQueries({ queryKey: tab === 'books' ? ['bookLibrary'] : ['gameLibrary'] });
   };
 
-
   const renderItem = ({item}: {item: any}) => {
     if (tab === 'books') {
-      return (
-        <BookCard
-          book={item.book}
-          userBookId={item.book_id}
-          inLibrary={true}
-          onLibraryChange={handleLibraryChange}
-          onPress={() => navigation.navigate('BookDetails', {book: item.book})}
-        />
-      );
+      return <BookCard 
+      book={item.book} 
+      userBookId={item.book_id} 
+      inLibrary={true} 
+      onLibraryChange={handleLibraryChange} 
+      onPress={() => navigation.navigate('BookDetails', {book: item.book})} />;
     }
-    return <GameCard game={item.game} />;
+    return (
+      <GameCard
+        game={item.game}
+        onRemove={() => removeGameMutation.mutate(item.game_id)}
+      />
+    );
   };
 
   const renderEmpty = () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
-import {Card, Text, Chip, Avatar, ProgressBar} from 'react-native-paper';
+import {Card, Text, Chip, Avatar, ProgressBar, IconButton} from 'react-native-paper';
 import type {Game} from '../../types/api';
 import {getGameIcon} from '../../utils/gameIcons';
 
@@ -8,9 +8,10 @@ interface GameCardProps {
   game: Game;
   similarityScore?: number;
   onPress?: () => void;
+  onRemove?: () => void;
 }
 
-export function GameCard({game, similarityScore, onPress}: GameCardProps) {
+export function GameCard({game, similarityScore, onPress, onRemove}: GameCardProps) {
   const icon = getGameIcon(game.genres);
 
   return (
@@ -19,13 +20,23 @@ export function GameCard({game, similarityScore, onPress}: GameCardProps) {
         <View style={styles.header}>
           <Avatar.Icon size={48} icon={icon} style={styles.avatar} />
           <View style={styles.headerText}>
-            <Text variant="titleMedium" numberOfLines={2} style={styles.title}>
-              {game.name}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text variant="titleMedium" numberOfLines={2} style={styles.title}>
+                {game.name}
+              </Text>
+              {onRemove && (
+                <IconButton
+                  icon="trash-can-outline"
+                  size={20}
+                  onPress={onRemove}
+                  accessibilityLabel="Remover jogo da biblioteca"
+                />
+              )}
+            </View>
             {game.rating && (
               <View style={styles.rating}>
                 <Text variant="bodySmall" style={styles.ratingText}>
-                  ⭐ {game.rating.toFixed(1)}/5
+                  ⭐️ {game.rating.toFixed(1)}/5
                 </Text>
                 {game.metacritic && (
                   <Text variant="bodySmall" style={styles.metacritic}>
@@ -103,6 +114,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     justifyContent: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     fontWeight: 'bold',
