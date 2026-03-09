@@ -14,7 +14,7 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, {useSharedValue, useAnimatedStyle, withSpring} from 'react-native-reanimated';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {recommendationsApi, usersApi} from '../../services/api/endpoints';
+import {booksApi ,recommendationsApi, usersApi} from '../../services/api/endpoints';
 import {useErrorHandler} from '../../hooks/useErrorHandler';
 import type {HomeStackScreenProps} from '../../types/navigation';
 
@@ -22,7 +22,9 @@ export function BookDetailsScreen({
   route,
   navigation,
 }: HomeStackScreenProps<'BookDetails'>) {
-  const {book} = route.params;
+  const [bookState, setBookState] = useState(route.params.book);
+  const book = bookState;
+  
   const [dialogVisible, setDialogVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string | { msg: string } | Array<{ msg: string }>>('');
   const {handleError} = useErrorHandler();
@@ -73,6 +75,17 @@ export function BookDetailsScreen({
     scale.value = withSpring(1.2, { damping: 10, stiffness: 200 }, () => {
       scale.value = withSpring(1);
     });
+    let bookId = book.id;
+    if (!bookId && book.google_books_id) {
+      
+      const createdBook = await booksApi.createFromGoogle(book.google_books_id);
+      bookId = createdBook.id;
+      setBookState({ ...book, id: createdBook.id });
+    }
+    if (!bookId) {
+      setSnackbarMessage('Não foi possível obter o ID do livro');
+      return;
+    }
     if (isInLibrary) {
       removeMutation.mutate();
     } else {
@@ -94,18 +107,17 @@ export function BookDetailsScreen({
 
   const handleGetRecommendations = async () => {
     setDialogVisible(true);
-    console.log('Book object:', book);
-    console.log('Book ID type:', typeof book.id, 'Value:', book.id);
     
     try {
       // Se o livro não tem ID numérico (veio do Google Books), criar no banco primeiro
       let bookId = book.id;
       
       if (!bookId && book.google_books_id) {
-        console.log('Livro sem ID, criando no banco primeiro...');
+        
         const createdBook = await booksApi.createFromGoogle(book.google_books_id);
         bookId = createdBook.id;
-        console.log('Livro criado com ID:', bookId);
+        setBookState({...book, id: createdBook.id}); // Atualiza o estado local 
+        
       }
       
       if (!bookId) {
@@ -115,7 +127,7 @@ export function BookDetailsScreen({
       const payload = {
         book_id: bookId,
       };
-      console.log('Recommendation payload:', JSON.stringify(payload));
+      
       recommendationMutation.mutate(payload);
     } catch (error) {
       setDialogVisible(false);
@@ -234,7 +246,7 @@ export function BookDetailsScreen({
           mode="contained"
           icon="gamepad-variant"
           onPress={handleGetRecommendations}
-          disabled={recommendationMutation.isPending}
+          disabled={!isInLibrary || recommendationMutation.isPending}
           style={styles.button}>
           Obter Recomendações de Jogos
         </Button>
